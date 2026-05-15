@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verification</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --rose: #ff4d6d;
+    --deep-rose: #c9184a;
+    --blush: #ffb3c1;
+    --gold: #ffd700;
+    --cream: #fff0f3;
+    --dark: #0a0010;
+    --glow: rgba(255, 77, 109, 0.6);
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--dark);
+    overflow: hidden;
+    font-family: 'Cormorant Garamond', serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: none;
+  }
+
+  /* Digital Rain Canvas */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.18;
+  }
+
+  /* Particle Hearts Canvas */
+  #heart-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Custom Cursor */
+  .cursor {
+    position: fixed;
+    width: 20px; height: 20px;
+    background: radial-gradient(circle, var(--rose), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease;
+    mix-blend-mode: screen;
+  }
+
+  /* Glow rings */
+  .glow-ring {
+    position: fixed;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 77, 109, 0.15);
+    pointer-events: none;
+    animation: ringPulse 4s ease-in-out infinite;
+  }
+  .glow-ring:nth-child(1) { width: 300px; height: 300px; top: 10%; left: 5%; animation-delay: 0s; }
+  .glow-ring:nth-child(2) { width: 200px; height: 200px; bottom: 15%; right: 8%; animation-delay: 1s; }
+  .glow-ring:nth-child(3) { width: 150px; height: 150px; top: 60%; left: 15%; animation-delay: 2s; }
+
+  @keyframes ringPulse {
+    0%, 100% { opacity: 0.1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.05); }
+  }
+
+  /* Main Container */
+  .login-container {
+    position: relative;
+    z-index: 10;
+    width: 420px;
+    max-width: 92vw;
+    text-align: center;
+  }
+
+  /* Floating Lock Icon */
+  .lock-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+    display: block;
+    animation: floatLock 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px var(--rose));
+  }
+
+  @keyframes floatLock {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Title */
+  .site-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-style: italic;
+    background: linear-gradient(135deg, var(--blush), var(--rose), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+    letter-spacing: 2px;
+  }
+
+  .subtitle {
+    color: rgba(255, 179, 193, 0.5);
+    font-size: 0.85rem;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    font-family: 'Courier Prime', monospace;
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 77, 109, 0.2);
+    border-radius: 24px;
+    padding: 40px 36px;
+    backdrop-filter: blur(20px);
+    box-shadow:
+      0 0 60px rgba(255, 77, 109, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose), transparent);
+  }
+
+  .card-label {
+    color: rgba(255, 179, 193, 0.6);
+    font-size: 0.72rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-family: 'Courier Prime', monospace;
+    margin-bottom: 16px;
+  }
+
+  /* Input */
+  .input-wrap {
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .name-input {
+    width: 100%;
+    background: rgba(255, 77, 109, 0.05);
+    border: 1px solid rgba(255, 77, 109, 0.25);
+    border-radius: 12px;
+    padding: 16px 20px 16px 50px;
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    letter-spacing: 1px;
+    outline: none;
+    transition: all 0.3s ease;
+    caret-color: var(--rose);
+  }
+
+  .name-input::placeholder {
+    color: rgba(255, 179, 193, 0.3);
+    font-style: italic;
+  }
+
+  .name-input:focus {
+    border-color: var(--rose);
+    background: rgba(255, 77, 109, 0.1);
+    box-shadow: 0 0 30px rgba(255, 77, 109, 0.15), inset 0 0 20px rgba(255, 77, 109, 0.05);
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    pointer-events: none;
+  }
+
+  /* Enter Button */
+  .enter-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--deep-rose), var(--rose));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-style: italic;
+    letter-spacing: 3px;
+    cursor: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(255, 77, 109, 0.4);
+  }
+
+  .enter-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .enter-btn:hover::before { left: 100%; }
+  .enter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(255, 77, 109, 0.6);
+  }
+
+  .enter-btn:active { transform: translateY(0); }
+
+  /* Error */
+  .error-msg {
+    color: var(--rose);
+    font-size: 0.82rem;
+    margin-top: 14px;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+    font-family: 'Courier Prime', monospace;
+    letter-spacing: 1px;
+  }
+  .error-msg.show { opacity: 1; transform: translateY(0); }
+
+  /* Hint below card */
+  .hint-text {
+    margin-top: 24px;
+    color: rgba(255, 179, 193, 0.25);
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    font-family: 'Courier Prime', monospace;
+  }
+
+  /* Success overlay */
+  .success-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 0, 16, 0);
+    pointer-events: none;
+    transition: background 0.5s ease;
+  }
+  .success-overlay.active {
+    pointer-events: all;
+    background: rgba(10, 0, 16, 0.95);
+  }
+  .success-content {
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .success-overlay.active .success-content {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .success-heart { font-size: 5rem; animation: heartBeat 0.8s ease infinite; }
+  @keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .success-text {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 2rem;
+    background: linear-gradient(135deg, var(--blush), var(--rose));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-top: 16px;
+  }
+
+  /* Scan line effect */
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  .scanline {
+    position: fixed;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,77,109,0.1), transparent);
+    animation: scanline 6s linear infinite;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Glitch text effect */
+  .glitch-container {
+    position: relative;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<canvas id="matrix-canvas"></canvas>
+<canvas id="heart-canvas"></canvas>
+<div class="scanline"></div>
+
+<div class="glow-ring"></div>
+<div class="glow-ring"></div>
+<div class="glow-ring"></div>
+
+<div class="login-container">
+  <span class="lock-icon"</span>
+  <h1 class="site-title">Verification</h1>
+  <p class="subtitle">private ·encrypted ·safe</p>
+
+  <div class="card">
+    <p class="card-label">Enter Your Full Name</p>
+    <div class="input-wrap">
+      
+      <input
+        type="text"
+        class="name-input"
+        id="nameInput"
+        placeholder="Enter your first two names"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <button class="enter-btn" onclick="verify()">Enter</button>
+    <p class="error-msg" id="errMsg">❌Access Denied</p>
+  </div>
+
+  <p class="hint-text">Details of Our Meets</p>
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-content">
+    <div class="success-heart">💗</div>
+    <p class="success-text" id="successText">Welcome, my love...</p>
+    <p style="color:rgba(255,179,193,0.5);font-size:0.8rem;margin-top:12px;font-family:'Courier Prime',monospace;letter-spacing:2px;">entering our world...</p>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────────────────────
+  // Change this to your girlfriend's name (case-insensitive)
+  const GIRLFRIEND_NAME ="shaheli amindhi"; // ← CHANGE THIS
+  // ───────────────────────────────────────────────────────────────────────
+
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Matrix digital rain (hearts & love characters)
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const chars = '♥ ❤ 💕 ✦ ♡ ❣ 01 love forever always you mine sweet kiss';
+  const charArr = chars.split('');
+  const fontSize = 14;
+  const cols = Math.floor(canvas.width / fontSize);
+  const drops = Array(cols).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(10,0,16,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.font = fontSize + 'px Courier Prime, monospace';
+    drops.forEach((y, i) => {
+      const char = charArr[Math.floor(Math.random() * charArr.length)];
+      ctx.globalAlpha = Math.random() * 0.5 + 0.1;
+      ctx.fillText(char, i * fontSize, y * fontSize);
+      if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+    ctx.globalAlpha = 1;
+  }
+  setInterval(drawMatrix, 60);
+
+  // Floating heart particles
+  const hCanvas = document.getElementById('heart-canvas');
+  const hCtx = hCanvas.getContext('2d');
+  hCanvas.width = window.innerWidth;
+  hCanvas.height = window.innerHeight;
+
+  const hearts = Array.from({length: 18}, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: Math.random() * 16 + 8,
+    speedX: (Math.random() - 0.5) * 0.4,
+    speedY: -Math.random() * 0.5 - 0.2,
+    opacity: Math.random() * 0.4 + 0.1,
+    char: ['💗','💕','❤️','♡','💖'][Math.floor(Math.random()*5)]
+  }));
+
+  function animHearts() {
+    hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height);
+    hearts.forEach(h => {
+      hCtx.globalAlpha = h.opacity;
+      hCtx.font = h.size + 'px serif';
+      hCtx.fillText(h.char, h.x, h.y);
+      h.x += h.speedX;
+      h.y += h.speedY;
+      if (h.y < -30) { h.y = hCanvas.height + 30; h.x = Math.random() * hCanvas.width; }
+    });
+    hCtx.globalAlpha = 1;
+    requestAnimationFrame(animHearts);
+  }
+  animHearts();
+
+  // Input enter key
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') verify();
+  });
+
+  // Click effect
+  document.addEventListener('click', e => {
+    const emoji = ['💕','❤','💗','✦'][Math.floor(Math.random()*4)];
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;font-size:1.2rem;pointer-events:none;z-index:9998;animation:floatUp 1s ease forwards;`;
+    el.textContent = emoji;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  });
+
+  // Add CSS for floatUp
+  document.head.insertAdjacentHTML('beforeend', `<style>
+    @keyframes floatUp {
+      0% { opacity:1; transform:translateY(0) scale(1); }
+      100% { opacity:0; transform:translateY(-60px) scale(1.5); }
+    }
+  </style>`);
+
+  // Verify function
+  function verify() {
+    const val = document.getElementById('nameInput').value.trim();
+    const err = document.getElementById('errMsg');
+    if (val.toLowerCase() === GIRLFRIEND_NAME.toLowerCase()) {
+      // Store access
+      sessionStorage.setItem('verified', 'true');
+      sessionStorage.setItem('gfName', val);
+      // Show success
+      document.getElementById('successText').textContent = `Welcome, ${val} 💕`;
+      const overlay = document.getElementById('successOverlay');
+      overlay.classList.add('active');
+      // Redirect after 2.5s
+      setTimeout(() => { window.location.href = 'countdown.html'; }, 2500);
+    } else {
+      err.classList.add('show');
+      document.getElementById('nameInput').style.borderColor = '#c9184a';
+      document.getElementById('nameInput').style.animation = 'shake 0.4s ease';
+      setTimeout(() => {
+        err.classList.remove('show');
+        document.getElementById('nameInput').style.borderColor = '';
+        document.getElementById('nameInput').style.animation = '';
+      }, 3000);
+    }
+  }
+
+  document.head.insertAdjacentHTML('beforeend', `<style>
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+  </style>`);
+
+  window.addEventListener('resize', () => {
+    canvas.width = hCanvas.width = window.innerWidth;
+    canvas.height = hCanvas.height = window.innerHeight;
+  });
+</script>
+</body>
+</html>

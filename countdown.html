@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Next Meet</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --rose: #ff4d6d;
+    --deep-rose: #c9184a;
+    --blush: #ffb3c1;
+    --gold: #ffd700;
+    --cream: #fff0f3;
+    --dark: #0a0010;
+    --darker: #060008;
+    --glow: rgba(255,77,109,0.6);
+  }
+
+  body {
+    min-height:100vh;
+    background: radial-gradient(ellipse at 50% 0%, #1a0018 0%, var(--darker) 60%);
+    font-family:'Cormorant Garamond',serif;
+    color:var(--cream);
+    overflow-x:hidden;
+    cursor:none;
+  }
+
+  /* CANVAS */
+  #bg-canvas {
+    position:fixed; inset:0;
+    z-index:0; pointer-events:none; opacity:0.15;
+  }
+  #particle-canvas {
+    position:fixed; inset:0;
+    z-index:1; pointer-events:none;
+  }
+
+  .cursor { position:fixed; width:16px; height:16px; background:radial-gradient(circle,var(--rose),transparent); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+
+  /* NAV */
+  nav {
+    position:fixed; top:0; left:0; right:0;
+    z-index:50;
+    display:flex; justify-content:center; gap:8px;
+    padding:14px 20px;
+    background:rgba(6,0,8,0.8);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(255,77,109,0.12);
+  }
+  nav a {
+    color:rgba(255,179,193,0.5);
+    text-decoration:none;
+    font-family:'Courier Prime',monospace;
+    font-size:0.72rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    padding:6px 16px;
+    border-radius:20px;
+    border:1px solid transparent;
+    transition:all 0.3s;
+  }
+  nav a:hover, nav a.active {
+    color:var(--rose);
+    border-color:rgba(255,77,109,0.3);
+    background:rgba(255,77,109,0.07);
+  }
+
+  /* MAIN */
+  main {
+    position:relative; z-index:10;
+    padding-top:90px; padding-bottom:60px;
+    max-width:900px; margin:0 auto;
+    padding-left:20px; padding-right:20px;
+  }
+
+  /* Header */
+  .page-header { text-align:center; margin-bottom:50px; }
+  .page-header .eyebrow {
+    color:rgba(255,179,193,0.4);
+    font-family:'Courier Prime',monospace;
+    font-size:0.7rem;
+    letter-spacing:5px;
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .page-header h1 {
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-size:clamp(2rem,5vw,3.5rem);
+    background:linear-gradient(135deg,var(--blush),var(--rose),var(--gold));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    line-height:1.2;
+  }
+  .page-header .sub {
+    color:rgba(255,179,193,0.45);
+    font-style:italic;
+    font-size:1.05rem;
+    margin-top:8px;
+  }
+
+  /* HEART TREE */
+  .tree-section { text-align:center; margin-bottom:50px; }
+  #heart-tree-svg {
+    width:min(340px,80vw);
+    animation:treeSway 2s ease-in-out infinite;
+    filter:drop-shadow(0 0 30px rgba(255,77,109,0.4));
+  }
+  @keyframes treeSway {
+    0%,100% { transform:rotate(-1.5deg) scale(1); }
+    50% { transform:rotate(1.5deg) scale(1.01); }
+  }
+
+  /* COUNTDOWN */
+  .countdown-wrapper {
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,77,109,0.18);
+    border-radius:24px;
+    padding:36px 30px;
+    margin-bottom:30px;
+    text-align:center;
+    backdrop-filter:blur(16px);
+    position:relative;
+    overflow:hidden;
+  }
+  .countdown-wrapper::before {
+    content:'';
+    position:absolute;
+    top:0; left:20%; right:20%;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--rose),transparent);
+  }
+
+  .countdown-label {
+    color:rgba(255,179,193,0.45);
+    font-family:'Courier Prime',monospace;
+    font-size:0.7rem;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .meet-date-display {
+    color:var(--blush);
+    font-style:italic;
+    font-size:1.1rem;
+    margin-bottom:28px;
+  }
+  .meet-date-display span {
+    color:var(--rose);
+    font-weight:bold;
+  }
+
+  .countdown-grid {
+    display:flex; justify-content:center; gap:16px; flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .cd-box {
+    background:rgba(255,77,109,0.06);
+    border:1px solid rgba(255,77,109,0.2);
+    border-radius:16px;
+    padding:20px 22px;
+    min-width:80px;
+    position:relative;
+    overflow:hidden;
+  }
+  .cd-box::after {
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,77,109,0.4),transparent);
+  }
+  .cd-num {
+    font-family:'Playfair Display',serif;
+    font-size:2.6rem;
+    font-weight:700;
+    background:linear-gradient(180deg,var(--cream),var(--blush));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    line-height:1;
+    display:block;
+    text-shadow:0 0 30px rgba(255,77,109,0.5);
+  }
+  .cd-label {
+    font-family:'Courier Prime',monospace;
+    font-size:0.6rem;
+    letter-spacing:3px;
+    color:rgba(255,179,193,0.4);
+    text-transform:uppercase;
+    margin-top:6px;
+    display:block;
+  }
+
+  .countdown-done {
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-size:2rem;
+    background:linear-gradient(135deg,var(--gold),var(--rose));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    display:none;
+    animation:pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* OWNER PANEL */
+  .owner-panel {
+    background:rgba(255,215,0,0.04);
+    border:1px solid rgba(255,215,0,0.2);
+    border-radius:16px;
+    padding:20px 24px;
+    margin-top:16px;
+    text-align:left;
+    display:none;
+  }
+  .owner-panel.visible { display:block; }
+  .owner-panel h3 {
+    color:var(--gold);
+    font-family:'Courier Prime',monospace;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .date-input-row {
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  .date-input-row input[type="datetime-local"] {
+    background:rgba(255,215,0,0.05);
+    border:1px solid rgba(255,215,0,0.25);
+    border-radius:10px;
+    padding:10px 14px;
+    color:var(--cream);
+    font-family:'Cormorant Garamond',serif;
+    font-size:0.95rem;
+    outline:none;
+    flex:1; min-width:200px;
+  }
+  .save-date-btn {
+    padding:10px 22px;
+    background:linear-gradient(135deg,#b8860b,var(--gold));
+    border:none; border-radius:10px;
+    color:#0a0010;
+    font-family:'Courier Prime',monospace;
+    font-size:0.75rem;
+    letter-spacing:2px;
+    cursor:none;
+    font-weight:bold;
+  }
+  .save-date-btn:hover { filter:brightness(1.1); }
+
+  .owner-unlock {
+    text-align:center; margin-top:16px;
+  }
+  .unlock-hint {
+    color:rgba(255,215,0,0.25);
+    font-family:'Courier Prime',monospace;
+    font-size:0.65rem;
+    letter-spacing:3px;
+    cursor:none;
+  }
+  .unlock-hint:hover { color:rgba(255,215,0,0.5); }
+  #ownerPassInput {
+    display:none;
+    background:rgba(255,215,0,0.05);
+    border:1px solid rgba(255,215,0,0.2);
+    border-radius:8px;
+    padding:8px 14px;
+    color:var(--cream);
+    font-family:'Courier Prime',monospace;
+    font-size:0.8rem;
+    outline:none;
+    width:180px;
+    margin:8px auto 0;
+    text-align:center;
+  }
+
+  /* COMMENTS */
+  .comments-section {
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,77,109,0.15);
+    border-radius:24px;
+    padding:30px;
+    backdrop-filter:blur(16px);
+  }
+  .comments-title {
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-size:1.5rem;
+    color:var(--blush);
+    margin-bottom:6px;
+    text-align:center;
+  }
+  .comments-subtitle {
+    text-align:center;
+    color:rgba(255,179,193,0.35);
+    font-size:0.8rem;
+    font-family:'Courier Prime',monospace;
+    letter-spacing:2px;
+    margin-bottom:24px;
+  }
+
+  .comment-input-area {
+    display:flex; gap:10px; align-items:flex-end; margin-bottom:24px;
+  }
+  .comment-textarea {
+    flex:1;
+    background:rgba(255,77,109,0.05);
+    border:1px solid rgba(255,77,109,0.2);
+    border-radius:14px;
+    padding:12px 16px;
+    color:var(--cream);
+    font-family:'Cormorant Garamond',serif;
+    font-size:1rem;
+    outline:none;
+    resize:none;
+    min-height:52px;
+    max-height:120px;
+    transition:border-color 0.3s;
+  }
+  .comment-textarea:focus { border-color:var(--rose); }
+  .comment-textarea::placeholder { color:rgba(255,179,193,0.3); font-style:italic; }
+  .post-btn {
+    background:linear-gradient(135deg,var(--deep-rose),var(--rose));
+    border:none; border-radius:12px;
+    padding:12px 20px;
+    color:white;
+    font-size:1.2rem;
+    cursor:none;
+    transition:all 0.3s;
+    box-shadow:0 4px 20px rgba(255,77,109,0.3);
+    flex-shrink:0;
+  }
+  .post-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,77,109,0.5); }
+
+  .comments-list { display:flex; flex-direction:column; gap:12px; }
+  .comment-item {
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,77,109,0.1);
+    border-radius:14px;
+    padding:14px 16px;
+    animation:fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .comment-author {
+    font-family:'Courier Prime',monospace;
+    font-size:0.7rem;
+    letter-spacing:2px;
+    color:var(--rose);
+    text-transform:uppercase;
+    margin-bottom:5px;
+  }
+  .comment-time { color:rgba(255,179,193,0.3); margin-left:8px; }
+  .comment-text {
+    font-style:italic;
+    color:rgba(255,240,243,0.8);
+    font-size:1rem;
+    line-height:1.6;
+  }
+  .no-comments {
+    text-align:center;
+    color:rgba(255,179,193,0.3);
+    font-style:italic;
+    font-size:0.9rem;
+    padding:20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<canvas id="bg-canvas"></canvas>
+<canvas id="particle-canvas"></canvas>
+
+<nav>
+  <a href="index.html">Enter</a>
+  <a href="countdown.html" class="active">Countdown</a>
+  <a href="chat.html">Chat</a>
+  <a href="gallery.html">Gallery</a>
+</nav>
+
+<main>
+  <div class="page-header">
+    <p class="eyebrow">Timeline </p>
+    <h1>CountDown</h1>
+    <p class="sub">Next Meet of Both Eyes</p>
+  </div>
+
+  <!-- Heart Tree -->
+  <div class="tree-section">
+    <svg id="heart-tree-svg" viewBox="0 0 340 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="trunkGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#8B4513"/>
+          <stop offset="100%" stop-color="#5C2D0A"/>
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Trunk -->
+      <rect x="158" y="280" width="24" height="100" rx="10" fill="url(#trunkGrad)"/>
+      <!-- Roots -->
+      <path d="M158 370 Q130 380 110 390" stroke="#5C2D0A" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M182 372 Q210 382 228 390" stroke="#5C2D0A" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M165 375 Q158 385 158 395" stroke="#5C2D0A" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- Main branches -->
+      <path d="M170 290 Q140 260 100 240" stroke="#6B3A1F" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M170 290 Q200 260 240 240" stroke="#6B3A1F" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M170 270 Q160 240 150 210" stroke="#6B3A1F" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M155 250 Q120 220 90 200" stroke="#6B3A1F" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M185 250 Q220 220 250 200" stroke="#6B3A1F" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M170 260 Q180 220 190 180" stroke="#6B3A1F" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M105 242 Q80 220 65 195" stroke="#6B3A1F" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M235 242 Q260 220 275 195" stroke="#6B3A1F" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- Hearts - using path for heart shape -->
+      <!-- Helper: heart at position cx,cy size s -->
+      <g class="hearts-group" filter="url(#glow)">
+        <!-- Large hearts -->
+        <text x="60" y="190" font-size="28" text-anchor="middle" fill="#ff4d6d" opacity="0.9" class="sway-h1">💗</text>
+        <text x="275" y="188" font-size="26" text-anchor="middle" fill="#ff4d6d" opacity="0.9" class="sway-h2">💕</text>
+        <text x="160" y="175" font-size="30" text-anchor="middle" fill="#ff4d6d" opacity="1" class="sway-h3">❤️</text>
+        <!-- Medium hearts -->
+        <text x="90" y="240" font-size="20" text-anchor="middle" fill="#ff4d6d" opacity="0.8" class="sway-h4">💖</text>
+        <text x="252" y="238" font-size="20" text-anchor="middle" fill="#ff4d6d" opacity="0.8" class="sway-h5">💗</text>
+        <text x="190" y="178" font-size="22" text-anchor="middle" fill="#ffb3c1" opacity="0.7" class="sway-h6">💕</text>
+        <text x="148" y="210" font-size="18" text-anchor="middle" fill="#ff4d6d" opacity="0.75" class="sway-h1">💖</text>
+        <!-- Small hearts -->
+        <text x="40" y="222" font-size="14" text-anchor="middle" fill="#ffb3c1" opacity="0.6" class="sway-h2">♡</text>
+        <text x="298" y="220" font-size="14" text-anchor="middle" fill="#ffb3c1" opacity="0.6" class="sway-h3">♡</text>
+        <text x="110" y="210" font-size="14" text-anchor="middle" fill="#ffb3c1" opacity="0.5" class="sway-h4">♡</text>
+        <text x="230" y="208" font-size="14" text-anchor="middle" fill="#ffb3c1" opacity="0.5" class="sway-h5">♡</text>
+        <text x="170" y="148" font-size="18" text-anchor="middle" fill="#ffd700" opacity="0.8" class="sway-h6">💛</text>
+        <text x="200" y="160" font-size="12" text-anchor="middle" fill="#ffb3c1" opacity="0.6" class="sway-h1">♡</text>
+        <text x="140" y="165" font-size="12" text-anchor="middle" fill="#ffb3c1" opacity="0.6" class="sway-h2">♡</text>
+
+        <!-- Top crown hearts -->
+        <text x="170" y="118" font-size="24" text-anchor="middle" fill="#ff4d6d" opacity="1" class="sway-h3">💗</text>
+        <text x="145" y="130" font-size="16" text-anchor="middle" fill="#ffb3c1" opacity="0.7" class="sway-h4">💕</text>
+        <text x="197" y="128" font-size="16" text-anchor="middle" fill="#ffb3c1" opacity="0.7" class="sway-h5">💕</text>
+        <!-- Branch tips -->
+        <text x="62" y="196" font-size="10" text-anchor="middle" fill="#ffd700" opacity="0.7" class="sway-h6">✦</text>
+        <text x="278" y="195" font-size="10" text-anchor="middle" fill="#ffd700" opacity="0.7" class="sway-h1">✦</text>
+      </g>
+
+      <!-- Ground sparkle -->
+      <ellipse cx="170" cy="390" rx="60" ry="8" fill="rgba(255,77,109,0.08)"/>
+    </svg>
+
+    <p style="color:rgba(255,179,193,0.35);font-family:'Courier Prime',monospace;font-size:0.7rem;letter-spacing:3px;margin-top:10px;"</p>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown-wrapper">
+    <p class="countdown-label"</p>
+    <p class="meet-date-display" id="meetDateDisplay">Loading...</p>
+    <div class="countdown-grid" id="countdownGrid">
+      <div class="cd-box"><span class="cd-num" id="cd-days">00</span><span class="cd-label">Days</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-hours">00</span><span class="cd-label">Hours</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-mins">00</span><span class="cd-label">Minutes</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-secs">00</span><span class="cd-label">Seconds</span></div>
+    </div>
+    <p class="countdown-done" id="countdownDone">💕DATE💕</p>
+
+    <!-- Owner unlock -->
+    <div class="owner-unlock">
+      <span class="unlock-hint" onclick="showOwnerInput()">⚙</span>
+      <input type="password" id="ownerPassInput" placeholder="owner pass..." onkeydown="checkOwnerPass(event)"/>
+    </div>
+  </div>
+
+  <!-- Owner Panel -->
+  <div class="owner-panel" id="ownerPanel">
+    <h3>⚙ Owner Controls — Set Meeting Date</h3>
+    <div class="date-input-row">
+      <input type="datetime-local" id="newMeetDate"/>
+      <button class="save-date-btn" onclick="saveMeetDate()">SAVE DATE</button>
+    </div>
+    <p style="color:rgba(255,215,0,0.3);font-family:'Courier Prime',monospace;font-size:0.65rem;margin-top:10px;letter-spacing:1px;">Only you can see and use this panel.</p>
+  </div>
+
+  <!-- Comments -->
+  <div class="comments-section" style="margin-top:30px;">
+    <h2 class="comments-title">Messeges</h2>
+    <p class="comments-subtitle"</p>
+    <div class="comment-input-area">
+      <textarea class="comment-textarea" id="commentInput" placeholder="Leave your messege" rows="2" onkeydown="commentKeyDown(event)"></textarea>
+      <button class="post-btn" onclick="postComment()">💕</button>
+    </div>
+    <div class="comments-list" id="commentsList">
+      <p class="no-comments" id="noComments"</p>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ── CONFIG ─────────────────────────
+  const OWNER_PASSWORD = "mypassword123"; // ← CHANGE THIS
+  // ───────────────────────────────────
+
+  // Guard
+  if (!sessionStorage.getItem('verified')) window.location.href = 'index.html';
+
+  const gfName = sessionStorage.getItem('gfName') || 'Love';
+
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+  });
+
+  // Matrix bg
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+  const matrixChars = '♥❤♡💕✦'; const mFontSize = 14;
+  const mCols = Math.floor(bgCanvas.width / mFontSize);
+  const mDrops = Array(mCols).fill(1);
+  function drawBg() {
+    bgCtx.fillStyle='rgba(6,0,8,0.05)'; bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+    bgCtx.fillStyle='#ff4d6d'; bgCtx.font=mFontSize+'px monospace';
+    mDrops.forEach((y,i)=>{ bgCtx.globalAlpha=Math.random()*0.4+0.05; bgCtx.fillText(matrixChars[Math.floor(Math.random()*matrixChars.length)],i*mFontSize,y*mFontSize); if(y*mFontSize>bgCanvas.height&&Math.random()>0.975) mDrops[i]=0; mDrops[i]++; });
+    bgCtx.globalAlpha=1;
+  }
+  setInterval(drawBg, 70);
+
+  // Floating particles
+  const pCanvas = document.getElementById('particle-canvas');
+  const pCtx = pCanvas.getContext('2d');
+  pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight;
+  const particles = Array.from({length:20},()=>({
+    x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight,
+    size:Math.random()*14+6, speedY:-Math.random()*0.4-0.1,
+    speedX:(Math.random()-0.5)*0.3, opacity:Math.random()*0.3+0.05,
+    char:['💗','💕','❤','♡','✦'][Math.floor(Math.random()*5)]
+  }));
+  function animP() {
+    pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+    particles.forEach(p=>{ pCtx.globalAlpha=p.opacity; pCtx.font=p.size+'px serif'; pCtx.fillText(p.char,p.x,p.y); p.x+=p.speedX; p.y+=p.speedY; if(p.y<-20){p.y=pCanvas.height+20;p.x=Math.random()*pCanvas.width;} });
+    pCtx.globalAlpha=1; requestAnimationFrame(animP);
+  }
+  animP();
+
+  // Heart tree sway CSS
+  document.head.insertAdjacentHTML('beforeend',`<style>
+    .sway-h1{animation:swayH 2.1s ease-in-out infinite;}
+    .sway-h2{animation:swayH 2.4s ease-in-out infinite 0.3s;}
+    .sway-h3{animation:swayH 1.9s ease-in-out infinite 0.6s;}
+    .sway-h4{animation:swayH 2.6s ease-in-out infinite 0.1s;}
+    .sway-h5{animation:swayH 2.2s ease-in-out infinite 0.8s;}
+    .sway-h6{animation:swayH 2.8s ease-in-out infinite 0.4s;}
+    @keyframes swayH{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-5px) rotate(3deg);}}
+  </style>`);
+
+  // ── COUNTDOWN ─────────────────────────────────────────────
+  function getMeetDate() {
+    const stored = localStorage.getItem('meetDate');
+    // Default date — CHANGE THIS to your actual meeting date/time
+    return stored || '2026-05-18T14:30';
+  }
+
+  function updateDisplay() {
+    const d = new Date(getMeetDate());
+    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
+    document.getElementById('meetDateDisplay').innerHTML =
+      `We meet on <span>${d.toLocaleDateString('en-US', opts)}</span>`;
+  }
+
+  function tick() {
+    const target = new Date(getMeetDate()).getTime();
+    const now = Date.now();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      document.getElementById('countdownGrid').style.display = 'none';
+      document.getElementById('countdownDone').style.display = 'block';
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    document.getElementById('cd-days').textContent = String(days).padStart(2,'0');
+    document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cd-mins').textContent = String(mins).padStart(2,'0');
+    document.getElementById('cd-secs').textContent = String(secs).padStart(2,'0');
+  }
+
+  updateDisplay(); tick();
+  setInterval(tick, 1000);
+
+  // Owner panel
+  function showOwnerInput() {
+    const inp = document.getElementById('ownerPassInput');
+    inp.style.display = inp.style.display === 'block' ? 'none' : 'block';
+    if (inp.style.display === 'block') inp.focus();
+  }
+
+  function checkOwnerPass(e) {
+    if (e.key === 'Enter') {
+      const inp = document.getElementById('ownerPassInput');
+      if (inp.value === OWNER_PASSWORD) {
+        document.getElementById('ownerPanel').classList.add('visible');
+        document.getElementById('newMeetDate').value = getMeetDate();
+        inp.style.display = 'none'; inp.value = '';
+      } else {
+        inp.style.borderColor = '#ff4d6d';
+        setTimeout(() => inp.style.borderColor = '', 1500);
+        inp.value = '';
+      }
+    }
+  }
+
+  function saveMeetDate() {
+    const val = document.getElementById('newMeetDate').value;
+    if (!val) return;
+    localStorage.setItem('meetDate', val);
+    updateDisplay(); tick();
+    const btn = document.querySelector('.save-date-btn');
+    btn.textContent = '✓ SAVED!';
+    setTimeout(() => btn.textContent = 'SAVE DATE', 2000);
+  }
+
+  // ── COMMENTS ────────────────────────────────────────────────
+  function getComments() {
+    try { return JSON.parse(localStorage.getItem('countdownComments') || '[]'); }
+    catch { return []; }
+  }
+  function saveComments(arr) {
+    localStorage.setItem('countdownComments', JSON.stringify(arr));
+  }
+
+  function renderComments() {
+    const list = document.getElementById('commentsList');
+    const noC = document.getElementById('noComments');
+    const comments = getComments();
+    if (comments.length === 0) { noC.style.display = 'block'; return; }
+    noC.style.display = 'none';
+    list.innerHTML = '';
+    comments.slice().reverse().forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'comment-item';
+      div.innerHTML = `
+        <div class="comment-author">${c.author} <span class="comment-time">${c.time}</span></div>
+        <div class="comment-text">${c.text}</div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function postComment() {
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const comments = getComments();
+    comments.push({
+      author: gfName,
+      text: text,
+      time: new Date().toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+    });
+    saveComments(comments);
+    input.value = '';
+    renderComments();
+  }
+
+  function commentKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); }
+  }
+
+  renderComments();
+
+  window.addEventListener('resize', () => {
+    bgCanvas.width = pCanvas.width = window.innerWidth;
+    bgCanvas.height = pCanvas.height = window.innerHeight;
+  });
+</script>
+</body>
+</html>
