@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Private Love Chat</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+height:100vh;
+overflow:hidden;
+font-family:Poppins;
+background:black;
+}
+
+/* VIDEO BACKGROUND */
+
+#bg-video{
+position:fixed;
+right:0;
+bottom:0;
+min-width:100%;
+min-height:100%;
+object-fit:cover;
+z-index:-2;
+filter:brightness(0.35) saturate(1.4);
+}
+
+/* DARK OVERLAY */
+
+.overlay{
+position:fixed;
+inset:0;
+background:
+linear-gradient(
+135deg,
+rgba(15,0,20,0.85),
+rgba(45,0,45,0.75),
+rgba(0,0,0,0.9)
+);
+z-index:-1;
+}
+
+/* NAVBAR */
+
+nav{
+height:75px;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:18px;
+backdrop-filter:blur(20px);
+background:rgba(255,255,255,0.04);
+border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+nav a{
+text-decoration:none;
+color:#ffb3c1;
+padding:12px 22px;
+border-radius:40px;
+transition:0.4s;
+font-size:15px;
+letter-spacing:1px;
+}
+
+nav a:hover{
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+color:white;
+transform:translateY(-2px);
+box-shadow:0 0 25px rgba(255,0,102,0.5);
+}
+
+/* MAIN CHAT */
+
+.chat-wrapper{
+height:calc(100vh - 75px);
+display:flex;
+flex-direction:column;
+padding:20px;
+}
+
+/* HEADER */
+
+.chat-header{
+display:flex;
+align-items:center;
+gap:15px;
+padding:18px;
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(20px);
+border-radius:25px;
+border:1px solid rgba(255,255,255,0.08);
+margin-bottom:18px;
+box-shadow:0 0 30px rgba(255,0,102,0.15);
+}
+
+.avatar{
+width:60px;
+height:60px;
+border-radius:50%;
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:26px;
+box-shadow:0 0 25px rgba(255,0,102,0.5);
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%{transform:scale(1);}
+50%{transform:scale(1.08);}
+100%{transform:scale(1);}
+}
+
+.chat-title{
+color:white;
+font-size:22px;
+font-weight:600;
+}
+
+.chat-sub{
+color:#ffb3c1;
+font-size:13px;
+margin-top:4px;
+}
+
+/* CHAT AREA */
+
+.chat-area{
+flex:1;
+overflow-y:auto;
+padding:15px;
+display:flex;
+flex-direction:column;
+gap:14px;
+scroll-behavior:smooth;
+}
+
+/* MESSAGE */
+
+.message{
+max-width:72%;
+padding:15px 20px;
+border-radius:25px;
+color:white;
+font-size:15px;
+line-height:1.6;
+animation:msgAnim 0.3s ease;
+backdrop-filter:blur(10px);
+position:relative;
+}
+
+.mine{
+align-self:flex-end;
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+box-shadow:0 0 25px rgba(255,0,102,0.3);
+}
+
+.her{
+align-self:flex-start;
+background:rgba(255,255,255,0.08);
+border:1px solid rgba(255,255,255,0.08);
+}
+
+@keyframes msgAnim{
+from{
+opacity:0;
+transform:translateY(15px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+/* INPUT AREA */
+
+.input-area{
+display:flex;
+align-items:center;
+gap:12px;
+padding:18px;
+background:rgba(255,255,255,0.05);
+border-radius:25px;
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,0.08);
+margin-top:12px;
+}
+
+.input-area input{
+flex:1;
+padding:16px 20px;
+border:none;
+outline:none;
+border-radius:20px;
+background:rgba(255,255,255,0.07);
+color:white;
+font-size:15px;
+}
+
+.input-area input::placeholder{
+color:rgba(255,255,255,0.4);
+}
+
+.send-btn{
+padding:16px 24px;
+border:none;
+border-radius:20px;
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.4s;
+font-size:15px;
+}
+
+.send-btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 30px rgba(255,0,102,0.5);
+}
+
+/* FLOATING HEARTS */
+
+.heart{
+position:fixed;
+font-size:20px;
+animation:floatHeart linear infinite;
+opacity:0.5;
+}
+
+@keyframes floatHeart{
+0%{
+transform:translateY(100vh) scale(0.5);
+opacity:0;
+}
+50%{
+opacity:0.7;
+}
+100%{
+transform:translateY(-120px) scale(1.2);
+opacity:0;
+}
+}
+
+/* TOOLS */
+
+.tool-btn{
+width:52px;
+height:52px;
+border:none;
+border-radius:50%;
+background:rgba(255,255,255,0.08);
+color:white;
+font-size:20px;
+cursor:pointer;
+transition:0.3s;
+backdrop-filter:blur(10px);
+}
+
+.tool-btn:hover{
+transform:scale(1.08);
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+}
+
+/* EMOJI BOX */
+
+.emoji-box{
+position:absolute;
+bottom:95px;
+left:20px;
+background:rgba(0,0,0,0.55);
+backdrop-filter:blur(20px);
+padding:15px;
+border-radius:20px;
+display:none;
+gap:10px;
+flex-wrap:wrap;
+width:320px;
+border:1px solid rgba(255,255,255,0.08);
+}
+
+.emoji-box span{
+font-size:28px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.emoji-box span:hover{
+transform:scale(1.25);
+}
+
+/* IMAGE MESSAGE */
+
+.chat-image{
+width:240px;
+border-radius:20px;
+margin-top:8px;
+}
+
+/* TIME */
+
+.msg-time{
+font-size:11px;
+margin-top:8px;
+opacity:0.7;
+text-align:right;
+}
+
+/* STATUS */
+
+.top-status{
+position:absolute;
+top:88px;
+right:25px;
+color:#00ff99;
+font-size:13px;
+letter-spacing:1px;
+}
+
+/* TYPING */
+
+.typing{
+font-size:13px;
+color:#ffb3c1;
+padding-left:12px;
+margin-top:5px;
+display:none;
+}
+
+/* AUDIO */
+
+audio{
+width:230px;
+margin-top:10px;
+}
+
+/* DELETE */
+
+.delete-btn{
+margin-top:8px;
+font-size:12px;
+opacity:0.7;
+cursor:pointer;
+}
+
+.delete-btn:hover{
+color:#ff4d88;
+}
+
+/* FLOATING BACKGROUND */
+
+.floating-bg{
+position:fixed;
+inset:0;
+background:
+radial-gradient(circle at 20% 20%,rgba(255,0,102,0.12),transparent 25%),
+radial-gradient(circle at 80% 40%,rgba(255,77,136,0.12),transparent 25%),
+radial-gradient(circle at 50% 80%,rgba(255,0,255,0.08),transparent 30%);
+animation:bgMove 12s linear infinite;
+z-index:-1;
+}
+
+@keyframes bgMove{
+0%{
+transform:translateY(0px);
+}
+50%{
+transform:translateY(-25px);
+}
+100%{
+transform:translateY(0px);
+}
+}
+
+
+/* REACTION BAR */
+
+.reaction-bar{
+display:flex;
+gap:8px;
+margin-top:6px;
+padding-left:10px;
+align-items:center;
+flex-wrap:wrap;
+}
+
+/* REACTION BUTTON */
+
+.react-btn{
+width:34px;
+height:34px;
+border-radius:50%;
+border:none;
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+font-size:16px;
+cursor:pointer;
+transition:0.3s;
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
+}
+
+.react-btn:hover{
+transform:scale(1.15);
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+box-shadow:0 0 20px rgba(255,0,102,0.4);
+}
+
+/* REACTION RESULT */
+
+.reaction-result{
+display:flex;
+gap:5px;
+margin-top:5px;
+padding-left:10px;
+flex-wrap:wrap;
+}
+
+.reaction-badge{
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(10px);
+padding:5px 10px;
+border-radius:20px;
+font-size:14px;
+animation:popReact 0.3s ease;
+border:1px solid rgba(255,255,255,0.08);
+}
+
+@keyframes popReact{
+0%{
+transform:scale(0.5);
+opacity:0;
+}
+100%{
+transform:scale(1);
+opacity:1;
+}
+}
+
+/* DOUBLE TICKS */
+
+.ticks{
+font-size:12px;
+margin-left:6px;
+opacity:0.8;
+}
+
+/* WALLPAPER PANEL */
+
+.wallpaper-panel{
+position:fixed;
+top:90px;
+left:20px;
+background:rgba(0,0,0,0.55);
+padding:15px;
+border-radius:20px;
+display:none;
+gap:10px;
+flex-direction:column;
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,0.08);
+z-index:100;
+}
+
+.wallpaper-panel button{
+padding:10px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+background:linear-gradient(135deg,#ff0066,#ff4d88);
+color:white;
+}
+
+
+
+/* LIGHT MODE */
+
+.light-mode{
+background:#ffeef5;
+color:#111;
+}
+
+/* LIGHT MODE REACTIONS */
+
+.light-mode .react-btn{
+background:white;
+color:#b30059;
+border:1px solid rgba(0,0,0,0.08);
+}
+
+.light-mode .reaction-badge{
+background:white;
+color:#111;
+border:1px solid rgba(0,0,0,0.08);
+}
+
+
+/* OVERLAY */
+
+.light-mode .overlay{
+background:
+linear-gradient(
+135deg,
+rgba(255,240,246,0.82),
+rgba(255,228,238,0.78),
+rgba(255,255,255,0.88)
+);
+}
+
+/* NAV */
+
+.light-mode nav{
+background:rgba(255,255,255,0.72);
+border-bottom:1px solid rgba(0,0,0,0.08);
+}
+
+.light-mode nav a{
+color:#b30059;
+}
+
+.light-mode nav a:hover{
+color:white;
+}
+
+/* CHAT HEADER */
+
+.light-mode .chat-header{
+background:rgba(255,255,255,0.72);
+border:1px solid rgba(0,0,0,0.08);
+}
+
+.light-mode .chat-title{
+color:#111;
+}
+
+.light-mode .chat-sub{
+color:#b30059;
+}
+
+/* INPUT AREA */
+
+.light-mode .input-area{
+background:rgba(255,255,255,0.78);
+border:1px solid rgba(0,0,0,0.08);
+box-shadow:0 0 20px rgba(255,77,136,0.12);
+}
+
+/* MESSAGE INPUT */
+
+.light-mode .input-area input{
+background:white;
+color:#111;
+border:1px solid rgba(0,0,0,0.08);
+box-shadow:0 0 10px rgba(0,0,0,0.04);
+}
+
+.light-mode .input-area input::placeholder{
+color:#777;
+}
+
+/* TOOL BUTTONS */
+
+.light-mode .tool-btn{
+background:white;
+color:#b30059;
+border:1px solid rgba(0,0,0,0.08);
+}
+
+.light-mode .tool-btn:hover{
+color:white;
+}
+
+/* MY MESSAGE */
+
+.light-mode .message.mine{
+background:linear-gradient(135deg,#ff4d88,#ff80aa);
+color:white;
+}
+
+/* HER MESSAGE */
+
+.light-mode .message.her{
+background:white;
+color:#111;
+border:1px solid rgba(0,0,0,0.08);
+}
+
+/* TIME */
+
+.light-mode .msg-time{
+color:rgba(0,0,0,0.6);
+}
+
+/* REPLY BOX */
+
+.light-mode .reply-box{
+border-bottom:1px solid rgba(0,0,0,0.08);
+color:#b30059;
+}
+
+/* EMOJI BOX */
+
+.light-mode .emoji-box{
+background:rgba(255,255,255,0.9);
+border:1px solid rgba(0,0,0,0.08);
+}
+
+/* WALLPAPER PANEL */
+
+.light-mode .wallpaper-panel{
+background:rgba(255,255,255,0.92);
+border:1px solid rgba(0,0,0,0.08);
+}
+
+/* STATUS */
+
+.light-mode .top-status{
+color:#009966;
+}
+
+/* TYPING */
+
+.light-mode .typing{
+color:#b30059;
+}
+
+/* REPLY */
+
+.reply-box{
+font-size:12px;
+opacity:0.7;
+margin-bottom:6px;
+padding-bottom:5px;
+border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+
+</style>
+</head>
+
+<body>
+
+<!-- VIDEO -->
+
+<video autoplay muted loop id="bg-video">
+<source src="romantic-video.mp4" type="video/mp4">
+</video>
+
+<div class="overlay"></div>
+
+<!-- FLOATING HEARTS -->
+
+<div class="heart" style="left:10%; animation-duration:10s;">💖</div>
+<div class="heart" style="left:30%; animation-duration:14s;">💕</div>
+<div class="heart" style="left:50%; animation-duration:12s;">💗</div>
+<div class="heart" style="left:70%; animation-duration:16s;">❤️</div>
+<div class="heart" style="left:90%; animation-duration:11s;">💞</div>
+
+<div class="floating-bg"></div>
+
+<!-- NAV -->
+
+<nav>
+
+<a href="index.html">Login</a>
+<a href="countdown.html">Countdown</a>
+<a href="chat.html">Chat</a>
+<a href="gallery.html">Gallery</a>
+<button onclick="downloadBackup()" class="tool-btn">🔄</button>
+<button class="tool-btn" onclick="toggleWallpaper()">🖼</button>
+<button class="tool-btn" onclick="toggleTheme()">🌙</button>
+<button class="tool-btn" onclick="sendGIF()">🎞</button>
+</nav>
+
+<div class="wallpaper-panel" id="wallpaperPanel">
+
+<button onclick="changeWallpaper('romantic-video.mp4')">
+Romantic
+</button>
+
+<button onclick="changeWallpaper('cyber-love.mp4')">
+Cyber Love
+</button>
+
+<button onclick="changeWallpaper('neon-hearts.mp4')">
+Neon Hearts
+</button>
+
+</div>
+
+
+
+<!-- CHAT -->
+
+<div class="chat-wrapper">
+
+<div class="chat-header">
+
+<div class="avatar">🧔🏼‍♀️</div>
+
+<div>
+
+<div class="chat-title">You</div>
+
+<div class="chat-sub">Leave your messege</div>
+
+</div>
+
+</div>
+
+<div class="chat-area" id="chatArea"></div>
+
+
+<div class="input-area">
+
+<button class="tool-btn" onclick="toggleEmoji()">😊</button>
+
+<label class="tool-btn">
+📷
+<input type="file" id="imgUpload" hidden accept="image/*">
+</label>
+
+<button class="tool-btn" onclick="startRecording()">⏺️</button>
+
+<input type="text" id="msg" placeholder="Message...">
+
+<button class="send-btn" onclick="sendMsg()">Send</button>
+
+</div>
+
+<div id="emojiBox" class="emoji-box">
+
+<span onclick="addEmoji('❤️')">❤️</span>
+<span onclick="addEmoji('💕')">💕</span>
+<span onclick="addEmoji('😘')">😘</span>
+<span onclick="addEmoji('🥺')">🥺</span>
+<span onclick="addEmoji('😍')">😍</span>
+<span onclick="addEmoji('💖')">💖</span>
+<span onclick="addEmoji('😚')">😚</span>
+<span onclick="addEmoji('💞')">💞</span>
+<span onclick="addEmoji('🌹')">🌹</span>
+<span onclick="addEmoji('✨')">✨</span>
+<span onclick="addEmoji('😀')">😀</span>
+<span onclick="addEmoji('😃')">😃</span>
+<span onclick="addEmoji('😄')">😄</span>
+<span onclick="addEmoji('😁')">😁</span>
+<span onclick="addEmoji('😆')">😆</span>
+<span onclick="addEmoji('😅')">😅</span>
+<span onclick="addEmoji('😂')">😂</span>
+<span onclick="addEmoji('🤣')">🤣</span>
+<span onclick="addEmoji('🥲')">🥲</span>
+<span onclick="addEmoji('🥹')">🥹</span>
+<span onclick="addEmoji('☺️')">☺️</span>
+<span onclick="addEmoji('😊')">😊</span>
+<span onclick="addEmoji('😇')">😇</span>
+<span onclick="addEmoji('🙂')">🙂</span>
+<span onclick="addEmoji('🙃')">🙃</span>
+<span onclick="addEmoji('😉')">😉</span>
+<span onclick="addEmoji('😌')">😌</span>
+<span onclick="addEmoji('😍')">😍</span>
+<span onclick="addEmoji('🥰')">🥰</span>
+<span onclick="addEmoji('😘')">😘</span>
+<span onclick="addEmoji('😗')">😗</span>
+<span onclick="addEmoji('😙')">😙</span>
+<span onclick="addEmoji('😋')">😋</span>
+<span onclick="addEmoji('😛')">😛</span>
+<span onclick="addEmoji('🥺')">🥺</span>
+<span onclick="addEmoji('😢')">😢</span>
+<span onclick="addEmoji('😭')">😭</span>
+<span onclick="addEmoji('😮‍💨')">😮‍💨</span>
+<span onclick="addEmoji('😤')">😤</span>
+<span onclick="addEmoji('😠')">😠</span>
+<span onclick="addEmoji('😡')">😡</span>
+<span onclick="addEmoji('🤬')">🤬</span>
+<span onclick="addEmoji('😱')">😱</span>
+<span onclick="addEmoji('😑')">😑</span>
+
+</div>
+
+
+</div>
+
+<div class="top-status">
+● Online
+</div>
+
+<div class="typing" id="typing">
+typing...
+</div>
+
+<script>
+if(!sessionStorage.getItem("verified")){
+window.location.href="index.html";
+}
+
+const msgInput=document.getElementById("msg");
+
+msgInput.addEventListener("input",()=>{
+
+document.getElementById("typing").style.display="block";
+
+clearTimeout(window.typingTimer);
+
+window.typingTimer=setTimeout(()=>{
+
+document.getElementById("typing").style.display="none";
+
+},1000);
+
+});
+
+/* SEND MESSAGE */
+
+function sendMsg(){
+
+const text=msgInput.value.trim();
+
+if(text==="") return;
+
+createMessage(text,"mine");
+
+msgInput.value="";
+
+}
+
+/* CREATE MESSAGE */
+
+function createMessage(content,type){
+
+const div=document.createElement("div");
+
+div.className=`message ${type}`;
+
+const time=new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+});
+
+div.innerHTML=`
+
+<div>${content}</div>
+
+<div class="msg-time">${time}</div>
+
+<div class="delete-btn" onclick="deleteMsg(this)">
+Delete
+</div>
+
+`;
+
+document.getElementById("chatArea").appendChild(div);
+
+saveChat();
+
+scrollBottom();
+
+}
+
+/* SAVE */
+
+function saveChat(){
+
+localStorage.setItem(
+"loveChat",
+document.getElementById("chatArea").innerHTML
+);
+
+}
+
+/* LOAD */
+
+window.onload=function(){
+
+const saved=localStorage.getItem("loveChat");
+
+if(saved){
+
+document.getElementById("chatArea").innerHTML=saved;
+
+}
+
+scrollBottom();
+
+}
+
+/* SCROLL */
+
+function scrollBottom(){
+
+const area=document.getElementById("chatArea");
+
+area.scrollTop=area.scrollHeight;
+
+}
+
+/* EMOJI */
+
+function toggleEmoji(){
+
+const box=document.getElementById("emojiBox");
+
+box.style.display=
+box.style.display==="flex"
+? "none"
+: "flex";
+
+}
+
+function addEmoji(e){
+
+msgInput.value += e;
+
+}
+
+/* IMAGE */
+
+document.getElementById("imgUpload")
+.addEventListener("change",function(){
+
+const file=this.files[0];
+
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=function(e){
+
+createMessage(
+`<img src="${e.target.result}" class="chat-image">`,
+"mine"
+);
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+/* DELETE */
+
+function deleteMsg(el){
+
+el.parentElement.remove();
+
+saveChat();
+
+}
+
+/* VOICE */
+
+let mediaRecorder;
+
+let audioChunks=[];
+
+async function startRecording(){
+
+const stream=
+await navigator.mediaDevices.getUserMedia({
+audio:true
+});
+
+mediaRecorder=
+new MediaRecorder(stream);
+
+mediaRecorder.start();
+
+audioChunks=[];
+
+mediaRecorder.ondataavailable=e=>{
+
+audioChunks.push(e.data);
+
+};
+
+mediaRecorder.onstop=()=>{
+
+const blob=new Blob(audioChunks,{
+type:'audio/mp3'
+});
+
+const audioURL=
+URL.createObjectURL(blob);
+
+createMessage(
+`
+<audio controls>
+<source src="${audioURL}">
+</audio>
+`,
+"mine"
+);
+
+};
+
+setTimeout(()=>{
+
+mediaRecorder.stop();
+
+},5000);
+
+}
+
+/* ENTER */
+
+msgInput.addEventListener("keydown",e=>{
+
+if(e.key==="Enter"){
+
+sendMsg();
+
+}
+
+});
+
+/* BACKUP */
+
+function downloadBackup(){
+
+const data=
+localStorage.getItem("loveChat");
+
+const blob=new Blob([data],{
+type:"text/html"
+});
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="love-chat-backup.html";
+
+a.click();
+
+}
+
+/* THEME */
+
+function toggleTheme(){
+
+document.body.classList.toggle("light-mode");
+
+}
+
+/* WALLPAPER */
+
+function toggleWallpaper(){
+
+const panel=document.getElementById("wallpaperPanel");
+
+panel.style.display=
+panel.style.display==="flex"
+? "none"
+: "flex";
+
+}
+
+function changeWallpaper(video){
+
+document.getElementById("bg-video")
+.src=video;
+
+}
+
+/* GIF */
+
+function sendGIF(){
+
+const gifs=[
+"https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
+"https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+"https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+];
+
+const random=
+gifs[Math.floor(Math.random()*gifs.length)];
+
+createMessage(
+`<img src="${random}" class="chat-image">`,
+"mine"
+);
+
+}
+
+/* REACTION */
+function addReaction(el,reaction){
+
+const result=
+el.parentElement.nextElementSibling;
+
+const badge=document.createElement("div");
+
+badge.className="reaction-badge";
+
+badge.innerHTML=reaction;
+
+result.appendChild(badge);
+
+}
+
+
+/* NOTIFICATION */
+
+function notify(text){
+
+if(Notification.permission==="granted"){
+
+new Notification("💖 New Message",{
+body:text
+});
+
+}
+
+}
+
+/* ASK PERMISSION */
+
+if(Notification.permission!=="granted"){
+
+Notification.requestPermission();
+
+}
+
+/* REPLY */
+
+let replyText="";
+
+function replyMessage(text){
+
+replyText=text;
+
+msgInput.placeholder=
+"Replying: "+text.substring(0,25);
+
+}
+
+/* UPDATE CREATE MESSAGE */
+
+const oldCreate=createMessage;
+
+createMessage=function(content,type){
+
+const div=document.createElement("div");
+
+div.className=`message ${type}`;
+
+const time=new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+});
+
+div.innerHTML=`
+
+${replyText
+? `<div class="reply-box">${replyText}</div>`
+: ""
+}
+
+<div ondblclick="replyMessage(this.innerText)">
+${content}
+</div>
+
+<div class="msg-time">
+
+${time}
+
+<span class="ticks">✓✓</span>
+
+</div>
+
+<div class="reaction-bar">
+
+<button class="react-btn"
+onclick="addReaction(this,'❤️')">
+❤️
+</button>
+
+<button class="react-btn"
+onclick="addReaction(this,'😍')">
+😍
+</button>
+
+<button class="react-btn"
+onclick="addReaction(this,'🔥')">
+🔥
+</button>
+
+<button class="react-btn"
+onclick="addReaction(this,'😘')">
+😘
+</button>
+
+</div>
+
+<div class="reaction-result"></div>
+
+
+<div class="delete-btn"
+onclick="deleteMsg(this)">
+Delete
+</div>
+
+`;
+
+document.getElementById("chatArea")
+.appendChild(div);
+
+saveChat();
+
+scrollBottom();
+
+notify("New lovely message 💕");
+
+replyText="";
+
+msgInput.placeholder=
+"Leave your message here";
+
+}
+
+
+</script>
+
+</body>
+</html>
