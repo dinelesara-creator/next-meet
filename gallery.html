@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Gallery</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Poppins;
+overflow-x:hidden;
+background:black;
+min-height:100vh;
+}
+
+/* VIDEO BACKGROUND */
+
+#bg-video{
+position:fixed;
+right:0;
+bottom:0;
+min-width:100%;
+min-height:100%;
+object-fit:cover;
+z-index:-3;
+filter:
+brightness(0.3)
+saturate(1.5)
+blur(1px);
+}
+
+/* OVERLAY */
+
+.overlay{
+position:fixed;
+inset:0;
+background:
+linear-gradient(
+135deg,
+rgba(8,0,15,0.88),
+rgba(35,0,40,0.72),
+rgba(0,0,0,0.92)
+);
+z-index:-2;
+}
+
+/* DIGITAL PARTICLES */
+
+.particles{
+position:fixed;
+inset:0;
+overflow:hidden;
+z-index:-1;
+}
+
+.particle{
+position:absolute;
+font-size:20px;
+animation:floatParticle linear infinite;
+opacity:0.6;
+}
+
+@keyframes floatParticle{
+
+0%{
+transform:
+translateY(100vh)
+scale(0.5);
+opacity:0;
+}
+
+50%{
+opacity:0.7;
+}
+
+100%{
+transform:
+translateY(-120px)
+scale(1.3);
+opacity:0;
+}
+
+}
+
+/* NAVIGATION */
+
+nav{
+height:80px;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:18px;
+background:rgba(255,255,255,0.04);
+backdrop-filter:blur(20px);
+border-bottom:
+1px solid rgba(255,255,255,0.08);
+position:sticky;
+top:0;
+z-index:100;
+}
+
+nav a{
+text-decoration:none;
+color:#ffb3c1;
+padding:12px 24px;
+border-radius:40px;
+transition:0.4s;
+font-size:15px;
+letter-spacing:1px;
+}
+
+nav a:hover{
+background:
+linear-gradient(
+135deg,
+#ff0066,
+#ff4d88
+);
+color:white;
+transform:translateY(-2px);
+box-shadow:
+0 0 30px rgba(255,0,102,0.45);
+}
+
+/* HEADER */
+
+.header{
+text-align:center;
+padding:60px 20px 30px;
+}
+
+.header h1{
+font-size:4.5rem;
+font-weight:700;
+
+background:
+linear-gradient(
+135deg,
+#ffffff,
+#ff4d88,
+#ff0066,
+#ffb3c1
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+animation:glowText 3s infinite alternate;
+}
+
+@keyframes glowText{
+
+0%{
+filter:drop-shadow(0 0 10px #ff0066);
+}
+
+100%{
+filter:drop-shadow(0 0 25px #ff4d88);
+}
+
+}
+
+.header p{
+color:#ffb3c1;
+margin-top:12px;
+letter-spacing:3px;
+font-size:15px;
+}
+
+/* UPLOAD AREA */
+
+.upload-panel{
+width:92%;
+max-width:1100px;
+margin:auto;
+padding:25px;
+border-radius:30px;
+
+background:rgba(255,255,255,0.05);
+
+backdrop-filter:blur(20px);
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+justify-content:center;
+align-items:center;
+
+box-shadow:
+0 0 40px rgba(255,0,102,0.15);
+}
+
+.upload-btn{
+
+padding:14px 24px;
+
+border:none;
+border-radius:18px;
+
+background:
+linear-gradient(
+135deg,
+#ff0066,
+#ff4d88
+);
+
+color:white;
+font-weight:600;
+cursor:pointer;
+transition:0.4s;
+}
+
+.upload-btn:hover{
+transform:scale(1.05);
+box-shadow:
+0 0 30px rgba(255,0,102,0.5);
+}
+
+
+/* GALLERY */
+
+.gallery{
+padding:50px;
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(320px,1fr));
+
+gap:30px;
+}
+
+/* CARD */
+
+.card{
+
+background:
+rgba(255,255,255,0.05);
+
+border-radius:30px;
+
+overflow:hidden;
+
+backdrop-filter:blur(20px);
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+transition:0.5s;
+
+position:relative;
+}
+
+.card:hover{
+
+transform:
+translateY(-12px)
+scale(1.03);
+
+box-shadow:
+0 0 50px rgba(255,0,102,0.35);
+
+}
+
+/* IMAGE */
+
+.card img{
+
+width:100%;
+height:420px;
+object-fit:cover;
+
+transition:0.5s;
+}
+
+.card:hover img{
+transform:scale(1.08);
+}
+
+/* VIDEO */
+
+.card video{
+
+width:100%;
+height:420px;
+object-fit:cover;
+}
+
+/* CARD CONTENT */
+
+.card-content{
+padding:22px;
+color:white;
+}
+
+.card-content h2{
+font-size:24px;
+margin-bottom:10px;
+}
+
+.card-content p{
+color:#ffb3c1;
+line-height:1.7;
+font-size:14px;
+}
+
+/* PLAYLIST */
+
+.playlist{
+
+width:92%;
+max-width:900px;
+
+margin:50px auto;
+
+padding:30px;
+
+border-radius:30px;
+
+background:
+rgba(255,255,255,0.05);
+
+backdrop-filter:blur(20px);
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 0 40px rgba(255,0,102,0.15);
+}
+
+.playlist h2{
+color:white;
+font-size:2rem;
+margin-bottom:10px;
+}
+
+.playlist p{
+color:#ffb3c1;
+margin-bottom:20px;
+}
+
+audio{
+width:100%;
+margin-top:15px;
+}
+
+/* FOOTER */
+
+.footer{
+text-align:center;
+padding:40px;
+color:#ffb3c1;
+font-size:14px;
+}
+
+
+/* REELS TITLE */
+
+.reels-title{
+text-align:center;
+margin-top:60px;
+margin-bottom:25px;
+}
+
+.reels-title h2{
+font-size:3rem;
+color:white;
+margin-bottom:10px;
+}
+
+.reels-title p{
+color:#ffb3c1;
+letter-spacing:2px;
+}
+
+/* REELS CONTAINER */
+
+.reels-container{
+
+display:flex;
+gap:30px;
+
+overflow-x:auto;
+
+padding:30px;
+
+scroll-snap-type:x mandatory;
+
+}
+
+/* SCROLLBAR */
+
+.reels-container::-webkit-scrollbar{
+height:8px;
+}
+
+.reels-container::-webkit-scrollbar-thumb{
+background:#ff0066;
+border-radius:20px;
+}
+
+/* REEL CARD */
+
+.reel-card{
+
+min-width:320px;
+width:320px;
+height:570px;
+
+border-radius:35px;
+
+overflow:hidden;
+
+position:relative;
+
+scroll-snap-align:center;
+
+background:black;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 0 40px rgba(255,0,102,0.2);
+
+transition:0.5s;
+
+}
+
+.reel-card:hover{
+
+transform:
+scale(1.03);
+
+box-shadow:
+0 0 60px rgba(255,0,102,0.45);
+
+}
+
+/* REEL VIDEO */
+
+.reel-video{
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+}
+
+/* REEL OVERLAY */
+
+.reel-overlay{
+
+position:absolute;
+inset:0;
+
+background:
+linear-gradient(
+transparent,
+rgba(0,0,0,0.8)
+);
+
+display:flex;
+flex-direction:column;
+justify-content:flex-end;
+
+padding:20px;
+
+}
+
+/* REEL TEXT */
+
+.reel-user{
+color:white;
+font-weight:600;
+font-size:18px;
+}
+
+.reel-caption{
+color:#ffb3c1;
+margin-top:8px;
+font-size:14px;
+line-height:1.6;
+}
+
+/* REEL ACTIONS */
+
+.reel-actions{
+
+position:absolute;
+
+right:15px;
+bottom:100px;
+
+display:flex;
+flex-direction:column;
+gap:20px;
+
+}
+
+.reel-btn{
+
+width:55px;
+height:55px;
+
+border-radius:50%;
+
+border:none;
+
+background:
+rgba(255,255,255,0.12);
+
+backdrop-filter:blur(15px);
+
+font-size:22px;
+
+color:white;
+
+cursor:pointer;
+
+transition:0.3s;
+
+}
+
+.reel-btn:hover{
+
+transform:scale(1.1);
+
+background:
+linear-gradient(
+135deg,
+#ff0066,
+#ff4d88
+);
+
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.reel-card{
+
+min-width:280px;
+width:280px;
+height:500px;
+
+}
+
+}
+
+/* REELS */
+
+.reels-container{
+
+display:flex;
+gap:30px;
+
+overflow-x:auto;
+
+padding:40px;
+
+scroll-snap-type:x mandatory;
+
+}
+
+.reel-card{
+
+min-width:320px;
+width:320px;
+height:570px;
+
+border-radius:35px;
+
+overflow:hidden;
+
+position:relative;
+
+background:black;
+
+scroll-snap-align:center;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 0 40px rgba(255,0,102,0.25);
+
+transition:0.5s;
+
+}
+
+.reel-card:hover{
+
+transform:
+scale(1.03);
+
+box-shadow:
+0 0 60px rgba(255,0,102,0.45);
+
+}
+
+.reel-video{
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+}
+
+/* OVERLAY */
+
+.reel-overlay{
+
+position:absolute;
+
+bottom:0;
+left:0;
+right:0;
+
+padding:20px;
+
+background:
+linear-gradient(
+transparent,
+rgba(0,0,0,0.85)
+);
+
+}
+
+/* USER */
+
+.reel-user{
+
+color:white;
+
+font-size:18px;
+font-weight:600;
+
+}
+
+/* CAPTION */
+
+.reel-caption{
+
+color:#ffb3c1;
+
+margin-top:8px;
+
+font-size:14px;
+line-height:1.6;
+
+}
+
+/* SCROLLBAR */
+
+.reels-container::-webkit-scrollbar{
+height:8px;
+}
+
+.reels-container::-webkit-scrollbar-thumb{
+background:#ff0066;
+border-radius:20px;
+}
+
+
+
+/* REELS WRAPPER */
+
+.reels-wrapper{
+position:relative;
+display:flex;
+align-items:center;
+}
+
+/* REELS */
+
+.reels-container{
+
+display:flex;
+gap:30px;
+
+overflow:hidden;
+
+padding:40px;
+
+scroll-behavior:smooth;
+
+}
+
+/* REEL CARD */
+
+.reel-card{
+
+min-width:320px;
+width:320px;
+height:570px;
+
+border-radius:35px;
+
+overflow:hidden;
+
+position:relative;
+
+background:black;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 0 40px rgba(255,0,102,0.25);
+
+transition:0.5s;
+
+cursor:pointer;
+
+}
+
+.reel-card:hover{
+
+transform:
+scale(1.03);
+
+box-shadow:
+0 0 60px rgba(255,0,102,0.45);
+
+}
+
+/* VIDEO */
+
+.reel-video{
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+}
+
+/* OVERLAY */
+
+.reel-overlay{
+
+position:absolute;
+
+bottom:0;
+left:0;
+right:0;
+
+padding:20px;
+
+background:
+linear-gradient(
+transparent,
+rgba(0,0,0,0.88)
+);
+
+}
+
+/* TEXT */
+
+.reel-user{
+color:white;
+font-size:18px;
+font-weight:600;
+}
+
+.reel-caption{
+color:#ffb3c1;
+margin-top:8px;
+font-size:14px;
+line-height:1.6;
+}
+
+/* NAVIGATION */
+
+.nav-btn{
+
+width:55px;
+height:55px;
+
+border:none;
+
+border-radius:50%;
+
+background:
+rgba(255,255,255,0.12);
+
+backdrop-filter:blur(15px);
+
+color:white;
+
+font-size:28px;
+
+cursor:pointer;
+
+transition:0.3s;
+
+z-index:10;
+
+}
+
+.nav-btn:hover{
+
+background:
+linear-gradient(
+135deg,
+#ff0066,
+#ff4d88
+);
+
+transform:scale(1.1);
+
+}
+
+/* FULLSCREEN */
+
+.fullscreen-reel{
+
+position:fixed;
+
+inset:0;
+
+background:
+rgba(0,0,0,0.95);
+
+display:none;
+
+align-items:center;
+justify-content:center;
+
+z-index:9999;
+
+}
+
+.fullscreen-reel video{
+
+width:auto;
+height:90vh;
+
+max-width:95vw;
+
+border-radius:25px;
+
+}
+
+/* CLOSE */
+
+.close-reel{
+
+position:absolute;
+
+top:25px;
+right:35px;
+
+font-size:40px;
+
+color:white;
+
+cursor:pointer;
+
+z-index:10000;
+
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.reel-card{
+
+min-width:280px;
+width:280px;
+height:500px;
+
+}
+
+}
+
+
+
+
+
+
+
+
+
+</style>
+</head>
+
+<body>
+
+
+<!-- VIDEO BACKGROUND -->
+
+<video autoplay muted loop id="bg-video">
+
+<source
+src="digital-love.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="overlay"></div>
+
+<!-- PARTICLES -->
+
+<div class="particles">
+
+<div class="particle"
+style="left:10%;animation-duration:12s;">
+💖
+</div>
+
+<div class="particle"
+style="left:25%;animation-duration:15s;">
+💕
+</div>
+
+<div class="particle"
+style="left:40%;animation-duration:10s;">
+✨
+</div>
+
+<div class="particle"
+style="left:60%;animation-duration:18s;">
+💗
+</div>
+
+<div class="particle"
+style="left:80%;animation-duration:14s;">
+❤️
+</div>
+
+</div>
+
+<!-- NAV -->
+
+<nav>
+
+<a href="index.html">Login</a>
+
+<a href="countdown.html">Countdown</a>
+
+<a href="chat.html">Chat</a>
+
+<a href="gallery.html">Gallery</a>
+
+</nav>
+
+<!-- HEADER -->
+
+<div class="header">
+
+<h1>Hall Of Love</h1>
+
+<p>GALLERY</p>
+
+</div>
+
+<!-- UPLOAD PANEL -->
+
+<div class="upload-panel">
+
+<label class="upload-btn">
+
+📸Pictures
+
+<input type="file"
+id="imageUpload"
+hidden
+multiple
+accept="image/*">
+
+</label>
+
+<label class="upload-btn">
+
+🎥MP4
+
+<input type="file"
+id="videoUpload"
+hidden
+multiple
+accept="video/mp4">
+
+</label>
+
+<label class="upload-btn">
+
+🎵Playlist
+
+<input type="file"
+id="musicUpload"
+hidden
+multiple
+accept="audio/*">
+
+</label>
+
+</div>
+
+<!-- GALLERY -->
+
+<div class="gallery"
+id="gallery">
+
+
+<!-- LOVE REELS -->
+
+<div class="reels-wrapper">
+
+<button class="nav-btn left"
+onclick="scrollReels(-1)">
+❮
+</button>
+
+<div class="reels-container"
+id="reelsContainer">
+
+<!-- REEL 1 -->
+
+<div class="reel-card">
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto"
+onclick="openReel(this)">
+
+<source
+src="reel1.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+💖Love
+</div>
+
+<div class="reel-caption">
+Forever with you ❤️
+</div>
+
+</div>
+
+</div>
+
+<!-- REEL 2 -->
+
+<div class="reel-card">
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto"
+onclick="openReel(this)">
+
+<source
+src="reel2.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+💕Soulmate
+</div>
+
+<div class="reel-caption">
+You are my peace ✨
+</div>
+
+</div>
+
+</div>
+
+<!-- REEL 3 -->
+
+<div class="reel-card">
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto"
+onclick="openReel(this)">
+
+<source
+src="reel3.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+💞 Forever Us
+</div>
+
+<div class="reel-caption">
+Memories 🎬
+</div>
+
+</div>
+
+</div>
+
+<!-- REEL 4 -->
+
+<div class="reel-card">
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto"
+onclick="openReel(this)">
+
+<source
+src="reel4.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+❤️ Endless Love
+</div>
+
+<div class="reel-caption">
+Every moment matters 🌙
+</div>
+
+</div>
+
+</div>
+
+<!-- REEL 5 -->
+
+<div class="reel-card">
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto"
+onclick="openReel(this)">
+
+<source
+src="reel5.mp4"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+✨ Together
+</div>
+
+<div class="reel-caption">
+Us against the world 💖
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<button class="nav-btn right"
+onclick="scrollReels(1)">
+❯
+</button>
+
+</div>
+
+<!-- FULLSCREEN REEL -->
+
+<div class="fullscreen-reel"
+id="fullscreenReel">
+
+<span class="close-reel"
+onclick="closeReel()">
+✕
+</span>
+
+<video
+id="fullscreenVideo"
+controls
+autoplay>
+
+</video>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+</div>
+
+<!-- PLAYLIST -->
+
+<div class="playlist">
+
+<h2>🎵 Shared Playlist</h2>
+
+<p>Our favorite songs together.</p>
+
+<div id="musicList"></div>
+
+</div>
+
+<!-- FOOTER -->
+
+<div class="footer">
+
+Forever Us❤️
+
+</div>
+
+<script>
+
+/* IMAGE UPLOAD */
+
+document.getElementById(
+"imageUpload"
+).addEventListener(
+"change",
+function(){
+
+const files=this.files;
+
+for(let file of files){
+
+const reader=
+new FileReader();
+
+reader.onload=function(e){
+
+const card=
+document.createElement("div");
+
+card.className="card";
+
+card.innerHTML=`
+
+<img src="${e.target.result}">
+
+<div class="card-content">
+
+<h2>MEMORY</h2>
+
+<p>Moments.</p>
+
+</div>
+
+`;
+
+document.getElementById(
+"gallery"
+).appendChild(card);
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+});
+
+
+
+/* LOVE REELS UPLOAD */
+
+document.getElementById(
+"videoUpload"
+).addEventListener(
+"change",
+function(){
+
+const files=this.files;
+
+for(let file of files){
+
+const reader=
+new FileReader();
+
+reader.onload=function(e){
+
+const reel=
+document.createElement("div");
+
+reel.className="reel-card";
+
+reel.innerHTML=`
+
+<video
+class="reel-video"
+controls
+playsinline
+preload="auto">
+
+<source
+src="${e.target.result}"
+type="video/mp4">
+
+</video>
+
+<div class="reel-overlay">
+
+<div class="reel-user">
+💖Love
+</div>
+
+<div class="reel-caption">
+memories together 💖
+</div>
+
+</div>
+
+<div class="reel-actions">
+
+<button class="reel-btn">
+❤️
+</button>
+
+<button class="reel-btn">
+💬
+</button>
+
+<button class="reel-btn">
+✨
+</button>
+
+</div>
+
+`;
+
+document.getElementById(
+"reelsContainer"
+).appendChild(reel);
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+});
+
+
+/* MUSIC PLAYLIST */
+
+document.getElementById(
+"musicUpload"
+).addEventListener(
+"change",
+function(){
+
+const files=this.files;
+
+for(let file of files){
+
+const reader=
+new FileReader();
+
+reader.onload=function(e){
+
+const div=
+document.createElement("div");
+
+div.innerHTML=`
+
+<p style="
+color:white;
+margin-top:20px;
+margin-bottom:8px;
+">
+
+🎵 ${file.name}
+
+</p>
+
+<audio controls>
+
+<source
+src="${e.target.result}">
+
+</audio>
+
+`;
+
+document.getElementById(
+"musicList"
+).appendChild(div);
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+});
+
+
+/* REEL NAVIGATION */
+
+function scrollReels(direction){
+
+const container =
+document.getElementById(
+"reelsContainer"
+);
+
+container.scrollBy({
+
+left: direction * 350,
+
+behavior:"smooth"
+
+});
+
+}
+
+/* OPEN FULLSCREEN */
+
+function openReel(video){
+
+const fullscreen =
+document.getElementById(
+"fullscreenReel"
+);
+
+const fullVideo =
+document.getElementById(
+"fullscreenVideo"
+);
+
+fullVideo.src =
+video.querySelector("source").src;
+
+fullscreen.style.display = "flex";
+
+fullVideo.play();
+
+}
+
+/* CLOSE */
+
+function closeReel(){
+
+const fullscreen =
+document.getElementById(
+"fullscreenReel"
+);
+
+const fullVideo =
+document.getElementById(
+"fullscreenVideo"
+);
+
+fullscreen.style.display = "none";
+
+fullVideo.pause();
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
