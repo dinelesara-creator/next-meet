@@ -802,435 +802,612 @@ Neon Hearts
 typing...
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-database-compat.js"></script>
+
 <script>
 if(!sessionStorage.getItem("verified")){
 window.location.href="index.html";
 }
 
+/*
+ * CROSS-DEVICE CHAT STORAGE
+ * --------------------------
+ * This chat previously used localStorage. localStorage belongs to one
+ * browser/device, so it cannot sync messages to another device.
+ *
+ * 1) Create a Firebase project.
+ * 2) Enable Realtime Database.
+ * 3) Enable Authentication -> Sign-in method -> Anonymous.
+ * 4) Paste your Firebase web-app configuration below.
+ *
+ * The same CHAT_ROOM value must be used on both devices.
+ */
+
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "PASTE_YOUR_PROJECT",
+  storageBucket: "PASTE_YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+  appId: "PASTE_YOUR_FIREBASE_APP_ID"
+};
+
+const CHAT_ROOM = "private-love-chat";
+const CLOUD_CONFIGURED =
+  firebaseConfig.apiKey !== "PASTE_YOUR_FIREBASE_API_KEY" &&
+  firebaseConfig.databaseURL !== "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com";
+
+let db = null;
+let currentUser = null;
+let messagesRef = null;
+let cloudReady = false;
+let renderingCloudMessages = false;
+
 const msgInput=document.getElementById("msg");
 
 msgInput.addEventListener("input",()=>{
-
 document.getElementById("typing").style.display="block";
-
 clearTimeout(window.typingTimer);
-
 window.typingTimer=setTimeout(()=>{
-
 document.getElementById("typing").style.display="none";
-
 },1000);
-
 });
 
-/* SEND MESSAGE */
+/* ---------------- CLOUD INITIALIZATION ---------------- */
+
+async function initCloudChat(){
+
+  if(!CLOUD_CONFIGURED){
+    console.warn("Firebase is not configured. Cross-device chat is disabled.");
+    loadLocalFallback();
+    return;
+  }
+
+  try{
+    if(!firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    db=firebase.database();
+
+    await firebase.auth().signInAnonymously();
+    currentUser=firebase.auth().currentUser;
+
+    messagesRef=db.ref("loveChats/"+CHAT_ROOM+"/messages");
+    cloudReady=true;
+
+    /*
+     * First migrate messages that were previously stored on THIS device.
+     * Only migrate when the shared room is empty, preventing duplicates.
+     */
+    const snapshot=await messagesRef.once("value");
+
+    if(!snapshot.exists()){
+      await migrateOldLocalMessages();
+    }
+
+    /*
+     * Realtime listener:
+     * every message added/changed/deleted in Firebase is reflected here.
+     */
+    messagesRef.on("value",renderCloudMessages);
+
+  }catch(error){
+    console.error("Firebase chat initialization failed:",error);
+    loadLocalFallback();
+  }
+}
+
+/* ---------------- SEND MESSAGE ---------------- */
 
 function sendMsg(){
 
-const text=msgInput.value.trim();
+  const text=msgInput.value.trim();
 
-if(text==="") return;
+  if(text==="") return;
 
-createMessage(text,"mine");
+  createMessage(text,"mine");
 
-msgInput.value="";
-
+  msgInput.value="";
 }
 
-/* CREATE MESSAGE */
+/* ---------------- CREATE MESSAGE ---------------- */
 
-function createMessage(content,type){
+function createMessage(content,type="mine",extra={}){
 
-const div=document.createElement("div");
+  const time=new Date().toLocaleTimeString([],{
+    hour:"2-digit",
+    minute:"2-digit"
+  });
 
-div.className=`message ${type}`;
+  const messageData={
+    content:content,
+    type:type,
+    time:time,
+    createdAt:firebaseReadyNow(),
+    senderId:currentUser ? currentUser.uid : "local-device",
+    reply:extra.reply || "",
+    reactions:extra.reactions || {}
+  };
 
-const time=new Date().toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
-});
+  if(cloudReady && messagesRef){
 
-div.innerHTML=`
+    messagesRef.push(messageData)
+      .catch(error=>{
+        console.error("Message could not be saved:",error);
+        addLocalMessage(messageData);
+      });
 
-<div>${content}</div>
+  }else{
+    addLocalMessage(messageData);
+  }
 
-<div class="msg-time">${time}</div>
+  scrollBottom();
+
+  notify("New lovely message 💕");
+
+  replyText="";
+  msgInput.placeholder="Leave your message here";
+}
+
+/*
+ * Firebase server timestamp is used when possible.
+ * For old/local messages we use the browser timestamp.
+ */
+function firebaseReadyNow(){
+  return (window.firebase && firebase.database.ServerValue)
+    ? firebase.database.ServerValue.TIMESTAMP
+    : Date.now();
+}
+
+/* ---------------- RENDER CLOUD MESSAGES ---------------- */
+
+function renderCloudMessages(snapshot){
+
+  const area=document.getElementById("chatArea");
+  const messages=[];
+
+  snapshot.forEach(child=>{
+    messages.push({
+      key:child.key,
+      data:child.val()
+    });
+  });
+
+  messages.sort((a,b)=>{
+    const at=typeof a.data.createdAt==="number" ? a.data.createdAt : 0;
+    const bt=typeof b.data.createdAt==="number" ? b.data.createdAt : 0;
+    return at-bt;
+  });
+
+  renderingCloudMessages=true;
+  area.innerHTML="";
+
+  messages.forEach(item=>{
+    renderStoredMessage(item.key,item.data);
+  });
+
+  renderingCloudMessages=false;
+
+  localStorage.setItem("loveChat",area.innerHTML);
+  scrollBottom();
+}
+
+/* ---------------- RENDER ONE STORED MESSAGE ---------------- */
+
+function renderStoredMessage(key,data){
+
+  const div=document.createElement("div");
+  const senderId=data.senderId || "";
+
+  /*
+   * Messages from this browser's Firebase anonymous account are "mine".
+   * Messages from another device/account are shown on the other side.
+   */
+  const visualType =
+    senderId && currentUser && senderId===currentUser.uid
+      ? "mine"
+      : (data.type==="mine" ? "her" : data.type || "her");
+
+  div.className=`message ${visualType}`;
+  div.dataset.messageKey=key;
+
+  const replyHtml=data.reply
+    ? `<div class="reply-box">${escapeHtml(data.reply)}</div>`
+    : "";
+
+  const contentHtml=data.content || "";
+
+  const reactions=data.reactions || {};
+  const reactionHtml=Object.values(reactions)
+    .map(r=>`<div class="reaction-badge">${escapeHtml(String(r))}</div>`)
+    .join("");
+
+  div.innerHTML=`
+
+${replyHtml}
+
+<div ondblclick="replyMessage(this.innerText)">
+${contentHtml}
+</div>
+
+<div class="msg-time">
+${escapeHtml(data.time || "")}
+<span class="ticks">✓✓</span>
+</div>
+
+<div class="reaction-bar">
+
+<button class="react-btn" onclick="addReaction(this,'❤️')">❤️</button>
+<button class="react-btn" onclick="addReaction(this,'😍')">😍</button>
+<button class="react-btn" onclick="addReaction(this,'🔥')">🔥</button>
+<button class="react-btn" onclick="addReaction(this,'😘')">😘</button>
+
+</div>
+
+<div class="reaction-result">${reactionHtml}</div>
 
 <div class="delete-btn" onclick="deleteMsg(this)">
 Delete
 </div>
-
 `;
 
-document.getElementById("chatArea").appendChild(div);
-
-saveChat();
-
-scrollBottom();
-
+  document.getElementById("chatArea").appendChild(div);
 }
 
-/* SAVE */
+/* ---------------- DELETE ---------------- */
+
+function deleteMsg(el){
+
+  const message=el.closest(".message");
+  if(!message) return;
+
+  const key=message.dataset.messageKey;
+
+  if(cloudReady && key){
+
+    messagesRef.child(key).remove()
+      .catch(error=>{
+        console.error("Could not delete message:",error);
+      });
+
+  }else{
+    message.remove();
+    saveChat();
+  }
+}
+
+/* ---------------- LOCAL FALLBACK/CACHE ---------------- */
 
 function saveChat(){
 
-localStorage.setItem(
-"loveChat",
-document.getElementById("chatArea").innerHTML
-);
-
+  /*
+   * Keep a browser cache too. This is NOT the cross-device database;
+   * Firebase is the source of truth when configured.
+   */
+  localStorage.setItem(
+    "loveChat",
+    document.getElementById("chatArea").innerHTML
+  );
 }
 
-/* LOAD */
+function loadLocalFallback(){
 
-window.onload=function(){
+  const saved=localStorage.getItem("loveChat");
 
-const saved=localStorage.getItem("loveChat");
+  if(saved){
+    document.getElementById("chatArea").innerHTML=saved;
+  }
 
-if(saved){
-
-document.getElementById("chatArea").innerHTML=saved;
-
+  scrollBottom();
 }
 
-scrollBottom();
+function addLocalMessage(data){
 
+  const key="local-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+
+  renderStoredMessage(key,data);
+  saveChat();
+  scrollBottom();
 }
 
-/* SCROLL */
+/* ---------------- MIGRATE OLD LOCAL HISTORY ---------------- */
+
+async function migrateOldLocalMessages(){
+
+  const saved=localStorage.getItem("loveChat");
+
+  if(!saved || !messagesRef) return;
+
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(saved,"text/html");
+  const oldMessages=[...doc.querySelectorAll(".message")];
+
+  if(!oldMessages.length) return;
+
+  const updates={};
+
+  oldMessages.forEach((old,index)=>{
+
+    const clone=old.cloneNode(true);
+
+    /*
+     * Delete controls are UI only and should not be stored as message content.
+     */
+    clone.querySelectorAll(".delete-btn").forEach(el=>el.remove());
+
+    const timeElement=clone.querySelector(".msg-time");
+
+    const time=timeElement
+      ? timeElement.childNodes[0]?.textContent?.trim() || ""
+      : "";
+
+    const type=old.classList.contains("mine") ? "mine" : "her";
+
+    updates["migration-"+Date.now()+"-"+index]={
+      content:clone.innerHTML,
+      type:type,
+      time:time,
+      createdAt:Date.now()+index,
+      senderId: type==="mine"
+        ? (currentUser ? currentUser.uid : "local-device")
+        : "previous-device",
+      reply:""
+    };
+  });
+
+  await messagesRef.update(updates);
+}
+
+/* ---------------- SCROLL ---------------- */
 
 function scrollBottom(){
 
-const area=document.getElementById("chatArea");
+  const area=document.getElementById("chatArea");
 
-area.scrollTop=area.scrollHeight;
-
+  area.scrollTop=area.scrollHeight;
 }
 
-/* EMOJI */
+/* ---------------- EMOJI ---------------- */
 
 function toggleEmoji(){
 
-const box=document.getElementById("emojiBox");
+  const box=document.getElementById("emojiBox");
 
-box.style.display=
-box.style.display==="flex"
-? "none"
-: "flex";
-
+  box.style.display=
+    box.style.display==="flex"
+      ? "none"
+      : "flex";
 }
 
 function addEmoji(e){
-
-msgInput.value += e;
-
+  msgInput.value += e;
 }
 
-/* IMAGE */
+/* ---------------- IMAGE ---------------- */
 
 document.getElementById("imgUpload")
 .addEventListener("change",function(){
 
-const file=this.files[0];
+  const file=this.files[0];
 
-if(!file) return;
+  if(!file) return;
 
-const reader=new FileReader();
+  const reader=new FileReader();
 
-reader.onload=function(e){
+  reader.onload=function(e){
 
-createMessage(
-`<img src="${e.target.result}" class="chat-image">`,
-"mine"
-);
+    createMessage(
+      `<img src="${e.target.result}" class="chat-image">`,
+      "mine"
+    );
+  };
 
-};
-
-reader.readAsDataURL(file);
-
+  reader.readAsDataURL(file);
 });
 
-/* DELETE */
-
-function deleteMsg(el){
-
-el.parentElement.remove();
-
-saveChat();
-
-}
-
-/* VOICE */
+/* ---------------- VOICE ---------------- */
 
 let mediaRecorder;
-
 let audioChunks=[];
 
 async function startRecording(){
 
-const stream=
-await navigator.mediaDevices.getUserMedia({
-audio:true
-});
+  const stream=
+    await navigator.mediaDevices.getUserMedia({
+      audio:true
+    });
 
-mediaRecorder=
-new MediaRecorder(stream);
+  mediaRecorder=
+    new MediaRecorder(stream);
 
-mediaRecorder.start();
+  mediaRecorder.start();
+  audioChunks=[];
 
-audioChunks=[];
+  mediaRecorder.ondataavailable=e=>{
+    audioChunks.push(e.data);
+  };
 
-mediaRecorder.ondataavailable=e=>{
+  mediaRecorder.onstop=()=>{
 
-audioChunks.push(e.data);
+    const blob=new Blob(audioChunks,{
+      type:"audio/mp3"
+    });
 
-};
+    /*
+     * Blob URLs are device-local and cannot be shared through Firebase.
+     * Convert the recording to a data URL so another device can load it.
+     */
+    const reader=new FileReader();
 
-mediaRecorder.onstop=()=>{
+    reader.onload=()=>{
+      createMessage(
+        `<audio controls><source src="${reader.result}" type="audio/mp3"></audio>`,
+        "mine"
+      );
+    };
 
-const blob=new Blob(audioChunks,{
-type:'audio/mp3'
-});
+    reader.readAsDataURL(blob);
 
-const audioURL=
-URL.createObjectURL(blob);
+    stream.getTracks().forEach(track=>track.stop());
+  };
 
-createMessage(
-`
-<audio controls>
-<source src="${audioURL}">
-</audio>
-`,
-"mine"
-);
-
-};
-
-setTimeout(()=>{
-
-mediaRecorder.stop();
-
-},5000);
-
+  setTimeout(()=>{
+    if(mediaRecorder && mediaRecorder.state==="recording"){
+      mediaRecorder.stop();
+    }
+  },5000);
 }
 
-/* ENTER */
+/* ---------------- ENTER ---------------- */
 
 msgInput.addEventListener("keydown",e=>{
 
-if(e.key==="Enter"){
-
-sendMsg();
-
-}
-
+  if(e.key==="Enter"){
+    sendMsg();
+  }
 });
 
-/* BACKUP */
+/* ---------------- BACKUP ---------------- */
 
 function downloadBackup(){
 
-const data=
-localStorage.getItem("loveChat");
+  const data=
+    document.getElementById("chatArea").innerHTML;
 
-const blob=new Blob([data],{
-type:"text/html"
-});
+  const blob=new Blob([data],{
+    type:"text/html"
+  });
 
-const a=document.createElement("a");
+  const a=document.createElement("a");
 
-a.href=URL.createObjectURL(blob);
+  a.href=URL.createObjectURL(blob);
+  a.download="love-chat-backup.html";
+  a.click();
 
-a.download="love-chat-backup.html";
-
-a.click();
-
+  URL.revokeObjectURL(a.href);
 }
 
-/* THEME */
+/* ---------------- THEME ---------------- */
 
 function toggleTheme(){
-
-document.body.classList.toggle("light-mode");
-
+  document.body.classList.toggle("light-mode");
 }
 
-/* WALLPAPER */
+/* ---------------- WALLPAPER ---------------- */
 
 function toggleWallpaper(){
 
-const panel=document.getElementById("wallpaperPanel");
+  const panel=document.getElementById("wallpaperPanel");
 
-panel.style.display=
-panel.style.display==="flex"
-? "none"
-: "flex";
-
+  panel.style.display=
+    panel.style.display==="flex"
+      ? "none"
+      : "flex";
 }
 
 function changeWallpaper(video){
-
-document.getElementById("bg-video")
-.src=video;
-
+  document.getElementById("bg-video").src=video;
 }
 
-/* GIF */
+/* ---------------- GIF ---------------- */
 
 function sendGIF(){
 
-const gifs=[
-"https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
-"https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
-"https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
-];
+  const gifs=[
+    "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
+    "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif",
+    "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+  ];
 
-const random=
-gifs[Math.floor(Math.random()*gifs.length)];
+  const random=
+    gifs[Math.floor(Math.random()*gifs.length)];
 
-createMessage(
-`<img src="${random}" class="chat-image">`,
-"mine"
-);
-
+  createMessage(
+    `<img src="${random}" class="chat-image">`,
+    "mine"
+  );
 }
 
-/* REACTION */
+/* ---------------- REACTION ---------------- */
+
 function addReaction(el,reaction){
 
-const result=
-el.parentElement.nextElementSibling;
+  const message=el.closest(".message");
+  if(!message) return;
 
-const badge=document.createElement("div");
+  const key=message.dataset.messageKey;
 
-badge.className="reaction-badge";
+  /*
+   * Keep the old visual behavior even if cloud storage is unavailable.
+   */
+  const result=message.querySelector(".reaction-result");
 
-badge.innerHTML=reaction;
+  const badge=document.createElement("div");
+  badge.className="reaction-badge";
+  badge.innerHTML=escapeHtml(reaction);
+  result.appendChild(badge);
 
-result.appendChild(badge);
+  if(cloudReady && key){
+    messagesRef.child(key+"/reactions").push(reaction);
+  }
 
+  saveChat();
 }
 
-
-/* NOTIFICATION */
+/* ---------------- NOTIFICATION ---------------- */
 
 function notify(text){
 
-if(Notification.permission==="granted"){
-
-new Notification("💖 New Message",{
-body:text
-});
-
+  if(
+    "Notification" in window &&
+    Notification.permission==="granted"
+  ){
+    new Notification("💖 New Message",{
+      body:text
+    });
+  }
 }
 
+if(
+  "Notification" in window &&
+  Notification.permission!=="granted"
+){
+  Notification.requestPermission().catch(()=>{});
 }
 
-/* ASK PERMISSION */
-
-if(Notification.permission!=="granted"){
-
-Notification.requestPermission();
-
-}
-
-/* REPLY */
+/* ---------------- REPLY ---------------- */
 
 let replyText="";
 
 function replyMessage(text){
 
-replyText=text;
+  replyText=text;
 
-msgInput.placeholder=
-"Replying: "+text.substring(0,25);
-
+  msgInput.placeholder=
+    "Replying: "+text.substring(0,25);
 }
 
-/* UPDATE CREATE MESSAGE */
+/* ---------------- HTML ESCAPE ---------------- */
 
-const oldCreate=createMessage;
+function escapeHtml(value){
 
-createMessage=function(content,type){
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
 
-const div=document.createElement("div");
+/* ---------------- START ---------------- */
 
-div.className=`message ${type}`;
-
-const time=new Date().toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
+window.addEventListener("load",()=>{
+  initCloudChat();
 });
-
-div.innerHTML=`
-
-${replyText
-? `<div class="reply-box">${replyText}</div>`
-: ""
-}
-
-<div ondblclick="replyMessage(this.innerText)">
-${content}
-</div>
-
-<div class="msg-time">
-
-${time}
-
-<span class="ticks">✓✓</span>
-
-</div>
-
-<div class="reaction-bar">
-
-<button class="react-btn"
-onclick="addReaction(this,'❤️')">
-❤️
-</button>
-
-<button class="react-btn"
-onclick="addReaction(this,'😍')">
-😍
-</button>
-
-<button class="react-btn"
-onclick="addReaction(this,'🔥')">
-🔥
-</button>
-
-<button class="react-btn"
-onclick="addReaction(this,'😘')">
-😘
-</button>
-
-</div>
-
-<div class="reaction-result"></div>
-
-
-<div class="delete-btn"
-onclick="deleteMsg(this)">
-Delete
-</div>
-
-`;
-
-document.getElementById("chatArea")
-.appendChild(div);
-
-saveChat();
-
-scrollBottom();
-
-notify("New lovely message 💕");
-
-replyText="";
-
-msgInput.placeholder=
-"Leave your message here";
-
-}
-
 
 </script>
 
